@@ -1,21 +1,20 @@
-from datetime import date
-from apps.core.ciclos import obter_ciclo
-from .models import Aviso, Lembrete, Evento, InformacaoOperacional, Dataimpor, Cardapio
-from achadoseperdidos.models import ItemAchado
-from provas.models import Prova
-from pxaulas.views import obter_proximas_aulas
-from cardapio.views import DIAS_CARDAPIO
+﻿from datetime import date
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from django.contrib.auth import login as auth_login
-from django.contrib.auth import logout
-from .utils import obter_clima
-from apps.core.decorators.ratelimit import login_rate_limit
+from django.contrib.auth import authenticate, get_user_model, login as auth_login, logout
 from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
+
+from apps.core.ciclos import obter_ciclo
+from apps.core.decorators.ratelimit import login_rate_limit
+from achadoseperdidos.models import ItemAchado
+from cardapio.views import DIAS_CARDAPIO
+from provas.models import Prova
+from pxaulas.views import obter_proximas_aulas
+from .models import Aviso, Lembrete, Evento, InformacaoOperacional, Dataimpor, Cardapio
+from .utils import obter_clima
 
 
 @never_cache
@@ -25,55 +24,46 @@ def horario_servidor(request):
         "fuso": settings.TIME_ZONE,
     })
 
+
 @login_rate_limit
 def index(request):
-
     erro = None
 
     if request.method == "POST":
-
         email = request.POST.get("email")
-
         senha = request.POST.get("senha")
 
-        try:
+        User = get_user_model()
+        usuario_email = User.objects.filter(email=email).order_by('pk').first()
 
-            usuario = User.objects.get(email=email)
+        if usuario_email is not None:
+            usuario = authenticate(
+                request,
+                username=usuario_email.get_username(),
+                password=senha,
+            )
+        else:
+            usuario = None
 
-            if usuario.check_password(senha):
+        if usuario is not None:
+            auth_login(request, usuario)
+            return redirect("painel")
 
-                auth_login(request, usuario)
-
-                return redirect("painel")
-
-            else:
-
-                erro = "Senha inválida"
-
-        except User.DoesNotExist:
-
-            erro = "E-mail não encontrado"
+        erro = "Credenciais inválidas."
 
     return render(
         request,
         "index.html",
-        {
-            "erro": erro
-        }
+        {"erro": erro},
     )
 
+
 def logout_view(request):
-
     logout(request)
-
     return redirect('index')
 
 
-
-
-
 def tela_tv(request):
-
     hoje = date.today()
 
     lembretes = Lembrete.objects.filter(
@@ -83,7 +73,7 @@ def tela_tv(request):
     avisos = Aviso.objects.filter(
         status_aviso='ativo',
         data_publi__lte=hoje,
-        data_expi__gte=hoje
+        data_expi__gte=hoje,
     ).order_by('-data_publi')[:5]
 
     return render(
@@ -91,8 +81,8 @@ def tela_tv(request):
         'lembretes.html',
         {
             'lembretes': lembretes,
-            'avisos': avisos
-        }
+            'avisos': avisos,
+        },
     )
 
 
@@ -143,22 +133,23 @@ def painel_publico(request):
 @login_required
 def painel(request):
     return render(request, 'admin/painel.html')
+
+
 @login_required
 def eventosadm(request):
     return render(request, 'admin/eventosadm.html')
+
 
 @login_required
 def avisoinstadm(request):
     return render(request, 'admin/avisoinstadm.html')
 
+
 @login_required
 def pxaulasadm(request):
     return render(request, 'admin/pxaulasadm.html')
+
+
 @login_required
 def infoopadm(request):
     return render(request, 'admin/infoopadm.html')
-
-from django.contrib.auth import logout
-from django.shortcuts import redirect
-
-

@@ -5,7 +5,8 @@ from django.shortcuts import (
 )
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.views.decorators.http import require_POST
 from .models import ItemAchado
 from apps.core.ciclos import obter_ciclo, paginar_por_ciclo
 from apps.dashboard.models import Aviso
@@ -71,6 +72,7 @@ def achados(request):
     )
 
 @login_required
+@permission_required('achadoseperdidos.add_itemachado', raise_exception=True)
 @upload_rate_limit
 def criar_item(request):
 
@@ -96,6 +98,7 @@ def criar_item(request):
     return redirect('achados')
 
 @login_required
+@permission_required('achadoseperdidos.change_itemachado', raise_exception=True)
 @upload_rate_limit
 def editar_item(request, id):
 
@@ -124,6 +127,8 @@ def editar_item(request, id):
     return redirect('achados')
 
 @login_required
+@permission_required('achadoseperdidos.delete_itemachado', raise_exception=True)
+@require_POST
 @excluir_rate_limit
 def excluir_item(request, id):
 

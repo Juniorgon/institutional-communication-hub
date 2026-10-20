@@ -2,6 +2,7 @@ from pathlib import Path
 import sys
 
 from decouple import Csv, config
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,8 +15,11 @@ DEBUG = config("DEBUG", default=True, cast=config_bool)
 TESTING = "test" in sys.argv
 SECRET_KEY = config(
     "SECRET_KEY",
-    default="dev-only-secret-key" if DEBUG or TESTING else None,
+    default="dev-only-secret-key" if DEBUG or TESTING else "change-me-in-production",
 )
+
+if not DEBUG and SECRET_KEY in {"dev-only-secret-key", "change-me-in-production"}:
+    raise ImproperlyConfigured("Defina SECRET_KEY para o ambiente de produção.")
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv())
 INSTALLED_APPS = [
@@ -156,4 +160,13 @@ SERVER_EMAIL = config("SERVER_EMAIL", default=EMAIL_HOST_USER)
 
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

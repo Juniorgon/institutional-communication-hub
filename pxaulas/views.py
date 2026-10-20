@@ -3,7 +3,8 @@ from django.http import JsonResponse
 from apps.dashboard.models  import HorarioAula, Aviso
 from datetime import  datetime, date
 import json
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.views.decorators.http import require_POST
 from apps.core.decorators.ratelimit import upload_rate_limit, excluir_rate_limit
 
 
@@ -185,6 +186,7 @@ def listar_horarios(request):
 
 
 @login_required
+@permission_required('dashboard.add_horarioaula', raise_exception=True)
 @upload_rate_limit
 def criar_horario(request):
 
@@ -206,6 +208,7 @@ def criar_horario(request):
         return JsonResponse({"status": "ok"})
 
 @login_required
+@permission_required('dashboard.change_horarioaula', raise_exception=True)
 @upload_rate_limit
 def editar_horario(request):
 
@@ -249,6 +252,8 @@ def editar_horario(request):
 
 
 @login_required
+@permission_required('dashboard.delete_horarioaula', raise_exception=True)
+@require_POST
 @excluir_rate_limit
 def excluir_horario(request):
 

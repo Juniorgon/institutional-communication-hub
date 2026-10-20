@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.views.decorators.http import require_POST
 from datetime import date
 from apps.core.decorators.ratelimit import upload_rate_limit, excluir_rate_limit
 from apps.dashboard.models import Aviso
@@ -44,6 +45,7 @@ def avisos(request):
     )
 
 @login_required
+@permission_required('dashboard.add_aviso', raise_exception=True)
 @upload_rate_limit
 def criar_aviso(request):
 
@@ -77,6 +79,7 @@ def criar_aviso(request):
     return redirect('avisosinst')
 
 @login_required
+@permission_required('dashboard.change_aviso', raise_exception=True)
 @upload_rate_limit
 def editar_aviso(request, id):
 
@@ -105,6 +108,8 @@ def editar_aviso(request, id):
     return redirect('avisosinst')
 
 @login_required
+@permission_required('dashboard.delete_aviso', raise_exception=True)
+@require_POST
 @excluir_rate_limit
 def excluir_aviso(request, id):
 
